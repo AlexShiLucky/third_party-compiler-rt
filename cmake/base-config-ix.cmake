@@ -40,6 +40,19 @@ if (LLVM_TREE_AVAILABLE)
     set(COMPILER_RT_TEST_COMPILER ${LLVM_RUNTIME_OUTPUT_INTDIR}/clang.exe)
     set(COMPILER_RT_TEST_CXX_COMPILER ${LLVM_RUNTIME_OUTPUT_INTDIR}/clang++.exe)
   endif()
+elseif (FUCHSIA)
+  execute_process(
+    COMMAND ${LLVM_CONFIG_PATH} "--version"
+    RESULT_VARIABLE HAD_ERROR
+    OUTPUT_VARIABLE CONFIG_OUTPUT)
+  if (HAD_ERROR)
+    message(FATAL_ERROR "llvm-config failed with status ${HAD_ERROR}")
+  endif()
+  string(REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?" CLANG_VERSION
+         ${CONFIG_OUTPUT})
+  set(COMPILER_RT_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  set(COMPILER_RT_EXEC_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
+  set(COMPILER_RT_INSTALL_PATH ${CMAKE_INSTALL_PREFIX}/lib/clang/${CLANG_VERSION})
 else()
     # Take output dir and install path from the user.
   set(COMPILER_RT_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH
@@ -128,6 +141,10 @@ macro(test_targets)
     # Examine compiler output to determine target architecture.
     detect_target_arch()
     set(COMPILER_RT_OS_SUFFIX "-android")
+  elseif(FUCHSIA)
+    # Test the target architectures supported by the compiler.
+    test_target_arch(x86_64 "" "--target=x86_64-fuchsia")
+    test_target_arch(aarch64 "" "--target=aarch64-fuchsia")
   elseif(NOT APPLE) # Supported archs for Apple platforms are generated later
     if(COMPILER_RT_DEFAULT_TARGET_ONLY)
       add_default_target_arch(${COMPILER_RT_DEFAULT_TARGET_ARCH})
