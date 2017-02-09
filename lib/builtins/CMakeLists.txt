@@ -187,6 +187,12 @@ if(APPLE)
     atomic_thread_fence.c)
 endif()
 
+if(FUCHSIA)
+  set(GENERIC_SOURCES
+    ${GENERIC_SOURCES}
+    dso_handle.c)
+endif()
+
 if(NOT WIN32 OR MINGW)
   set(GENERIC_SOURCES
       ${GENERIC_SOURCES}
